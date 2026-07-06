@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoneyMate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101915;
+    --surface:#16231D;
+    --surface-2:#1D2B23;
+    --paper:#EFE7D3;
+    --paper-dark:#E2D8BE;
+    --gold:#C9A227;
+    --gold-bright:#E8C158;
+    --ink:#1B2E28;
+    --positive:#6FBF8B;
+    --negative:#C1543C;
+    --muted:#8B9A8F;
+    --line:rgba(201,162,39,0.25);
+    --radius:10px;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    max-width:1160px;
+    margin:0 auto;
+    padding:32px 24px 80px;
+  }
+  /* ---------- Header ---------- */
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+    border-bottom:2px solid var(--gold);
+    padding-bottom:18px;
+    margin-bottom:28px;
+  }
+  .masthead h1{
+    font-family:'Fraunces',serif;
+    font-optical-sizing:auto;
+    font-weight:700;
+    font-size:2.4rem;
+    letter-spacing:0.01em;
+    margin:0;
+    color:var(--paper);
+  }
+  .masthead h1 span{ color:var(--gold-bright); }
+  .masthead .tagline{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .masthead .balance-box{
+    text-align:right;
+  }
+  .masthead .balance-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:block;
+    margin-bottom:2px;
+  }
+  .masthead .balance-value{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:2rem;
+    font-weight:600;
+  }
+  .balance-value.positive{ color:var(--positive); }
+  .balance-value.negative{ color:var(--negative); }
+
+  /* ---------- Layout: ledger stub + page ---------- */
+  .ledger{
+    display:grid;
+    grid-template-columns:280px 1fr;
+    background:var(--surface);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  }
+  @media (max-width:800px){
+    .ledger{ grid-template-columns:1fr; }
+    .stub{ border-right:none !important; border-bottom:3px dashed var(--line); }
+  }
+
+  .stub{
+    background:var(--surface-2);
+    padding:26px 24px;
+    border-right:3px dashed var(--line);
+  }
+  .stub h2, .page h2{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:1.05rem;
+    letter-spacing:0.02em;
+    margin:0 0 16px;
+    color:var(--gold-bright);
+  }
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--paper);
+    border-radius:6px;
+    padding:9px 10px;
+    font-family:'Inter',sans-serif;
+    font-size:0.92rem;
+  }
+  .field input:focus, .field select:focus, .type-toggle button:focus-visible, .tx-row .del:focus-visible, .submit-btn:focus-visible, .reset-btn:focus-visible{
+    outline:2px solid var(--gold-bright);
+    outline-offset:2px;
+  }
+  .field input[type="number"]{ font-family:'IBM Plex Mono',monospace; }
+
+  .type-toggle{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .type-toggle button{
+    flex:1;
+    padding:9px 0;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.75rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .type-toggle button.active[data-type="expense"]{
+    background:rgba(193,84,60,0.18);
+    border-color:var(--negative);
+    color:var(--negative);
+  }
+  .type-toggle button.active[data-type="income"]{
+    background:rgba(111,191,139,0.18);
+    border-color:var(--positive);
+    color:var(--positive);
+  }
+
+  .submit-btn{
+    width:100%;
+    padding:11px 0;
+    border-radius:6px;
+    border:none;
+    background:var(--gold);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .submit-btn:hover{ background:var(--gold-bright); }
+
+  .summary-pills{
+    margin-top:26px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .pill{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 12px;
+    border-radius:6px;
+    background:var(--bg);
+    border:1px solid var(--line);
+  }
+  .pill .pill-label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .pill .pill-value{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+  }
+  .pill.income .pill-value{ color:var(--positive); }
+  .pill.expense .pill-value{ color:var(--negative); }
+
+  .reset-btn{
+    margin-top:18px;
+    width:100%;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:8px 0;
+    border-radius:6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+  }
+  .reset-btn:hover{ color:var(--negative); border-color:var(--negative); }
+
+  /* ---------- Page (main ledger) ---------- */
+  .page{ padding:26px 28px; }
+  .page-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+  }
+  .tx-count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;
+    color:var(--muted);
+  }
+
+  .tx-list{
+    margin-top:10px;
+  }
+  .tx-row{
+    display:grid;
+    grid-template-columns:88px 1fr 120px 110px 32px;
+    align-items:center;
+    gap:12px;
+    padding:12px 4px;
+    border-bottom:1px solid var(--line);
+    background-image:linear-gradient(to right, transparent, transparent);
+  }
+  .tx-row:hover{ background:rgba(201,162,39,0.06); }
+  .tx-date{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.75rem;
+    color:var(--muted);
+  }
+  .tx-desc{ font-size:0.92rem; }
+  .tx-cat{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.68rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:3px 8px;
+    width:fit-content;
+  }
+  .tx-amount{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    text-align:right;
+  }
+  .tx-amount.income{ color:var(--positive); }
+  .tx-amount.expense{ color:var(--negative); }
+  .tx-row .del{
+    background:none;
+    border:none;
+    color:var(--muted);
+    cursor:pointer;
+    font-size:1rem;
+    line-height:1;
+    padding:4px;
+    border-radius:4px;
+  }
+  .tx-row .del:hover{ color:var(--negative); }
+
+  .empty-state{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--muted);
+  }
+  .empty-state .big{
+    font-family:'Fraunces',serif;
+    font-size:1.3rem;
+    color:var(--paper-dark);
+    margin-bottom:6px;
+  }
+
+  /* ---------- Category breakdown ---------- */
+  .breakdown{
+    margin-top:32px;
+    border-top:2px solid var(--gold);
+    padding-top:20px;
+  }
+  .bar-row{
+    display:grid;
+    grid-template-columns:120px 1fr 80px;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .bar-cat{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.75rem;
+    color:var(--paper-dark);
+  }
+  .bar-track{
+    height:10px;
+    background:var(--bg);
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--gold), var(--gold-bright));
+    border-radius:5px;
+    transition:width .4s ease;
+  }
+  .bar-amount{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.78rem;
+    text-align:right;
+    color:var(--paper-dark);
+  }
+
+  .loading-note{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.75rem;
+    color:var(--muted);
+    padding:20px 4px;
+  }
+
+  ::selection{ background:var(--gold); color:var(--ink); }
+
+  .download-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:transparent;
+    border:1px solid var(--gold);
+    color:var(--gold-bright);
+    padding:7px 12px;
+    border-radius:6px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.7rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .download-btn:hover{ background:rgba(201,162,39,0.14); }
+  .download-btn:disabled{ opacity:0.5; cursor:default; }
+  .download-btn:focus-visible{ outline:2px solid var(--gold-bright); outline-offset:2px; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <div class="masthead">
+    <div>
+      <h1>Money<span>Mate</span></h1>
+      <div class="tagline">a running ledger of where it goes</div>
+    </div>
+    <div class="balance-box">
+      <span class="balance-label">Current Balance</span>
+      <span class="balance-value" id="balanceValue">₹0.00</span>
+    </div>
+  </div>
+
+  <div class="ledger">
+    <!-- STUB: add entry -->
+    <div class="stub">
+      <h2>New Entry</h2>
+      <div class="type-toggle">
+        <button type="button" data-type="expense" class="active">Expense</button>
+        <button type="button" data-type="income">Income</button>
+      </div>
+      <div class="field">
+        <label for="descInput">Description</label>
+        <input id="descInput" type="text" placeholder="e.g. Groceries" maxlength="60">
+      </div>
+      <div class="field">
+        <label for="amountInput">Amount</label>
+        <input id="amountInput" type="number" min="0" step="0.01" placeholder="0.00">
+      </div>
+      <div class="field">
+        <label for="categorySelect">Category</label>
+        <select id="categorySelect"></select>
+      </div>
+      <div class="field">
+        <label for="dateInput">Date</label>
+        <input id="dateInput" type="date">
+      </div>
+      <button class="submit-btn" id="addBtn">Add to Ledger</button>
+
+      <div class="summary-pills">
+        <div class="pill income">
+          <span class="pill-label">Income</span>
+          <span class="pill-value" id="totalIncome">₹0.00</span>
+        </div>
+        <div class="pill expense">
+          <span class="pill-label">Expenses</span>
+          <span class="pill-value" id="totalExpense">₹0.00</span>
+        </div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">Clear all entries</button>
+    </div>
+
+    <!-- PAGE: transactions -->
+    <div class="page">
+      <div class="page-head">
+        <h2>Transactions</h2>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span class="tx-count" id="txCount"></span>
+          <button class="download-btn" id="downloadBtn">⬇ Download Bill (PDF)</button>
+        </div>
+      </div>
+      <div id="listArea">
+        <div class="loading-note">Opening the ledger…</div>
+      </div>
+
+      <div class="breakdown" id="breakdownSection" style="display:none;">
+        <h2>Where expenses went</h2>
+        <div id="breakdownBars"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const EXPENSE_CATS = ["Food","Transport","Housing","Utilities","Entertainment","Health","Shopping","Other"];
+  const INCOME_CATS = ["Salary","Freelance","Gift","Other"];
+  const STORAGE_KEY = "moneymate:transactions";
+
+  let transactions = [];
+  let currentType = "expense";
+  let ready = false;
+
+  const $ = (id) => document.getElementById(id);
+  const fmt = (n) => "₹" + Math.abs(n).toLocaleString("en-IN",{minimumFractionDigits:2, maximumFractionDigits:2});
+
+  function populateCategories(){
+    const sel = $("categorySelect");
+    sel.innerHTML = "";
+    const cats = currentType === "expense" ? EXPENSE_CATS : INCOME_CATS;
+    cats.forEach(c=>{
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+  }
+
+  function setType(type){
+    currentType = type;
+    document.querySelectorAll(".type-toggle button").forEach(b=>{
+      b.classList.toggle("active", b.dataset.type === type);
+    });
+    populateCategories();
+  }
+
+  document.querySelectorAll(".type-toggle button").forEach(btn=>{
+    btn.addEventListener("click", ()=> setType(btn.dataset.type));
+  });
+
+  async function persist(){
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(transactions), false);
+    }catch(e){
+      console.error("Could not save entry:", e);
+    }
+  }
+
+  async function loadData(){
+    try{
+      const result = await window.storage.get(STORAGE_KEY, false);
+      transactions = result ? JSON.parse(result.value) : [];
+    }catch(e){
+      transactions = [];
+    }
+    ready = true;
+    render();
+  }
+
+  function addTransaction(){
+    const desc = $("descInput").value.trim();
+    const amount = parseFloat($("amountInput").value);
+    const category = $("categorySelect").value;
+    const date = $("dateInput").value || new Date().toISOString().slice(0,10);
+
+    if(!desc){ $("descInput").focus(); return; }
+    if(!amount || amount <= 0){ $("amountInput").focus(); return; }
+
+    transactions.unshift({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      type: currentType,
+      desc, amount, category, date
+    });
+
+    $("descInput").value = "";
+    $("amountInput").value = "";
+    persist();
+    render();
+  }
+
+  function removeTransaction(id){
+    transactions = transactions.filter(t=>t.id !== id);
+    persist();
+    render();
+  }
+
+  $("addBtn").addEventListener("click", addTransaction);
+  $("amountInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") addTransaction(); });
+  $("descInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") addTransaction(); });
+
+  $("resetBtn").addEventListener("click", ()=>{
+    if(transactions.length === 0) return;
+    if(confirm("Clear every entry in this ledger? This can't be undone.")){
+      transactions = [];
+      persist();
+      render();
+    }
+  });
+
+  function render(){
+    if(!ready) return;
+
+    const income = transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const expense = transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    const balance = income - expense;
+
+    const balEl = $("balanceValue");
+    balEl.textContent = (balance<0?"-":"") + fmt(balance);
+    balEl.className = "balance-value " + (balance>=0 ? "positive" : "negative");
+
+    $("totalIncome").textContent = fmt(income);
+    $("totalExpense").textContent = fmt(expense);
+    $("txCount").textContent = transactions.length + (transactions.length===1 ? " entry" : " entries");
+
+    const listArea = $("listArea");
+    if(transactions.length === 0){
+      listArea.innerHTML = '<div class="empty-state"><div class="big">The ledger is empty</div>Add your first entry using the stub on the left.</div>';
+      $("breakdownSection").style.display = "none";
+      return;
+    }
+
+    const sorted = [...transactions].sort((a,b)=> b.date.localeCompare(a.date) || 0);
+    listArea.innerHTML = '<div class="tx-list">' + sorted.map(t=>`
+      <div class="tx-row">
+        <span class="tx-date">${formatDate(t.date)}</span>
+        <span class="tx-desc">${escapeHtml(t.desc)}</span>
+        <span class="tx-cat">${escapeHtml(t.category)}</span>
+        <span class="tx-amount ${t.type}">${t.type==="expense"?"-":"+"}${fmt(t.amount)}</span>
+        <button class="del" title="Remove entry" data-id="${t.id}">×</button>
+      </div>
+    `).join("") + "</div>";
+
+    listArea.querySelectorAll(".del").forEach(btn=>{
+      btn.addEventListener("click", ()=> removeTransaction(btn.dataset.id));
+    });
+
+    // category breakdown (expenses only)
+    const byCat = {};
+    transactions.filter(t=>t.type==="expense").forEach(t=>{
+      byCat[t.category] = (byCat[t.category]||0) + t.amount;
+    });
+    const entries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    const bSection = $("breakdownSection");
+    if(entries.length === 0){
+      bSection.style.display = "none";
+    }else{
+      bSection.style.display = "block";
+      const max = entries[0][1];
+      $("breakdownBars").innerHTML = entries.map(([cat,amt])=>`
+        <div class="bar-row">
+          <span class="bar-cat">${escapeHtml(cat)}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(amt/max*100).toFixed(1)}%"></div></div>
+          <span class="bar-amount">${fmt(amt)}</span>
+        </div>
+      `).join("");
+    }
+  }
+
+  function formatDate(iso){
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(undefined,{month:"short", day:"numeric"});
+  }
+  function escapeHtml(str){
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function downloadPDF(){
+    if(transactions.length === 0){
+      alert("Add at least one entry before downloading a statement.");
+      return;
+    }
+    if(!window.jspdf){
+      alert("The PDF library hasn't finished loading yet — give it a second and try again.");
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const INK = [27,46,40], GOLD = [201,162,39], POS = [45,125,80], NEG = [163,54,36], MUTED = [110,120,113];
+
+    // Header band
+    doc.setFillColor(...INK);
+    doc.rect(0, 0, pageWidth, 90, "F");
+    doc.setTextColor(255,255,255);
+    doc.setFont("times","bold");
+    doc.setFontSize(24);
+    doc.text("MoneyMate", 40, 45);
+    doc.setFont("courier","normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...GOLD);
+    doc.text("STATEMENT OF ACCOUNT", 40, 63);
+    doc.setTextColor(220,220,220);
+    doc.text("Generated " + new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"}), 40, 77);
+
+    // Summary
+    const income = transactions.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    const expense = transactions.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    const balance = income - expense;
+
+    let y = 120;
+    doc.setFont("courier","normal");
+    doc.setFontSize(10);
+    doc.setTextColor(...MUTED);
+    doc.text("TOTAL INCOME", 40, y);
+    doc.text("TOTAL EXPENSES", 220, y);
+    doc.text("BALANCE", 400, y);
+    y += 18;
+    doc.setFont("courier","bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...POS);
+    doc.text(fmt(income), 40, y);
+    doc.setTextColor(...NEG);
+    doc.text(fmt(expense), 220, y);
+    doc.setTextColor(balance>=0 ? POS[0]:NEG[0], balance>=0 ? POS[1]:NEG[1], balance>=0 ? POS[2]:NEG[2]);
+    doc.text((balance<0?"-":"") + fmt(balance), 400, y);
+
+    // Table
+    const sorted = [...transactions].sort((a,b)=> b.date.localeCompare(a.date));
+    const rows = sorted.map(t => [
+      formatDate(t.date),
+      t.desc,
+      t.category,
+      t.type === "income" ? "Income" : "Expense",
+      (t.type==="expense"?"-":"+") + fmt(t.amount)
+    ]);
+
+    doc.autoTable({
+      startY: y + 26,
+      head: [["Date","Description","Category","Type","Amount"]],
+      body: rows,
+      styles: { font: "helvetica", fontSize: 9, cellPadding: 6, textColor: [30,30,30] },
+      headStyles: { fillColor: INK, textColor: [255,255,255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245,242,232] },
+      columnStyles: { 4: { halign: "right", fontStyle: "bold" } },
+      didParseCell: function(data){
+        if(data.section === "body" && data.column.index === 4){
+          const isExpense = data.cell.raw.startsWith("-");
+          data.cell.styles.textColor = isExpense ? NEG : POS;
+        }
+      },
+      margin: { left: 40, right: 40 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY || y + 26;
+    doc.setFont("helvetica","italic");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(`${transactions.length} ${transactions.length===1?"entry":"entries"} total`, 40, finalY + 20);
+
+    doc.save(`MoneyMate-Statement-${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  $("downloadBtn").addEventListener("click", downloadPDF);
+
+  // init
+  $("dateInput").value = new Date().toISOString().slice(0,10);
+  populateCategories();
+  loadData();
+})();
+</script>
+</body>
+</html>
